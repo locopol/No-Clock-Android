@@ -1,6 +1,7 @@
 package fr.cuffel.mylametrictime;
 
 import android.annotation.SuppressLint;
+import android.media.AudioAttributes;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.webkit.JavascriptInterface;
@@ -109,6 +110,7 @@ public class FullscreenActivity extends AppCompatActivity {
 
                                 try {
                                     JSONObject notification_json = new JSONObject(buf.toString());
+                                    Log.d("MSGfull--------> ", String.valueOf(buf));
 
                                     MyWebView.post(new Runnable() {
                                         @Override
@@ -151,11 +153,24 @@ public class FullscreenActivity extends AppCompatActivity {
         public void playSound(String _url) {
             MediaPlayer mPlayer = new MediaPlayer();
             Uri myUri = Uri.parse(_url);
-            mPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
+
+            // fix media player attributes based on updated doc
+            mPlayer.setAudioAttributes(new AudioAttributes.Builder()
+                    .setUsage(AudioAttributes.USAGE_MEDIA)
+                    .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+                    .build());
             try {
                 mPlayer.setDataSource(MyActivity, myUri);
                 mPlayer.prepare();
                 mPlayer.start();
+                // release media player to fix warnings in logcat
+                mPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
+                    @Override
+                    public void onCompletion(MediaPlayer mPlayer) {
+                        mPlayer.release();
+                    }
+                });
+
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -337,10 +352,12 @@ public class FullscreenActivity extends AppCompatActivity {
 
         File file = new File(getFilesDir().getAbsolutePath() + "/main.zip");
         if(!file.exists()){
+            Log.d("--------> ", "aqui va a descargar");
             final DownloadTask downloadTask = new DownloadTask(this);
-            downloadTask.execute("https://github.com/HeyHeyChicken/No-Clock/archive/refs/heads/main.zip");
+            downloadTask.execute("https://github.com/locopol/No-Clock/archive/refs/heads/main.zip");
         }
         else{
+            Log.d("--------> ", "aqui va el zip" + getFilesDir().getAbsolutePath() + "/" + "main.zip");
             TextView step1 = findViewById(R.id.step1);
             step1.setTextColor(Green);
             unpackZip(getFilesDir().getAbsolutePath() + "/", "main.zip");
